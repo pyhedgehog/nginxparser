@@ -3,7 +3,7 @@ import unittest
 
 from mockio import mockio
 
-from nginxparser import NginxParser, load,  dumps
+from nginxparser_eb import NginxParser, load,  dumps
 
 
 first = operator.itemgetter(0)
