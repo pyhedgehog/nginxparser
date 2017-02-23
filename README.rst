@@ -11,11 +11,11 @@ method:
     >>> from nginxparser_eb import load
     >>> load(open("/etc/nginx/sites-enabled/foo.conf"))
 
-    '[['server'], [
+    [['server'], [
         ['listen', '80'],
         ['server_name', 'foo.com'],
         ['root', '/home/ubuntu/sites/foo/']]]]
-    '
+
 
 Same as other serialization modules also you can export configuration
 with
@@ -25,11 +25,11 @@ with
     >>> from nginxparser_eb import load
     >>> load(open("/etc/nginx/sites-enabled/foo.conf"))
 
-    '[['server'], [
+    [['server'], [
         ['listen', '80'],
         ['server_name', 'foo.com'],
         ['root', '/home/ubuntu/sites/foo/']]]]
-    '
+
 
 Same as other serialization modules also you can export configuration
 with
@@ -39,11 +39,11 @@ with
     >>> from nginxparser import load
     >>> load(open("/etc/nginx/sites-enabled/foo.conf"))
 
-    '[['server'], [
+    [['server'], [
         ['listen', '80'],
         ['server_name', 'foo.com'],
         ['root', '/home/ubuntu/sites/foo/']]]]
-    '
+
 
 Same as other serialization modules also you can export configuration
 with ``dump`` and ``dumps`` methods.
