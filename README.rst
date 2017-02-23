@@ -36,7 +36,7 @@ with
 
 .. code:: python
 
-    >>> from nginxparser import load
+    >>> from nginxparser_eb import load
     >>> load(open("/etc/nginx/sites-enabled/foo.conf"))
 
     [['server'], [
@@ -80,7 +80,7 @@ with ``dump`` and ``dumps`` methods.
 
 .. code:: python
 
-    >>> from nginxparser import dumps
+    >>> from nginxparser_eb import dumps
     >>> dumps([['server'], [
                 ['listen', '80'],
                 ['server_name', 'foo.com'],
@@ -95,6 +95,8 @@ with ``dump`` and ``dumps`` methods.
 
 Installation
 ------------
+
+The Nginx parser is now available via pip:
 
 ::
 
