@@ -129,3 +129,4 @@ def dumps(blocks, indentation=4):
 
 def dump(blocks, _file, indentation=4):
     return NginxDumper(blocks, indentation).to_file(_file)
+
