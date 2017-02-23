@@ -102,3 +102,29 @@ The Nginx parser is now available via pip:
 
     pip install nginxparser_eb
 
+
+
+Troubleshooting
+---------------
+
+Exception like this may occur:
+
+::
+
+    ParseException: Expected {Group:({W:(ABCD...) [{Suppress:(<SPC><TAB><CR><LF>) !W:({};)}] Suppress:(";")}) | Forward: ...} (at char 0), (line:1, col:1)
+
+It may be caused by importing Cmd2 package which modifies pyparsing globals. In particular, the following code causes
+the trouble:
+
+.. code:: python
+
+    pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
+
+In this setting the pyparser parser stops parsing after a new line.
+
+From this reason, importing pyparsing modifies set white space chars back to
+
+.. code:: python
+
+    pyparsing.ParserElement.setDefaultWhitespaceChars(" \n\t\r")
+

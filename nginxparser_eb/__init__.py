@@ -4,6 +4,9 @@ from pyparsing import (
     Literal, White, Word, alphanums, CharsNotIn, Forward, Group, SkipTo,
     Optional, OneOrMore, ZeroOrMore, pythonStyleComment)
 
+import pyparsing
+pyparsing.ParserElement.setDefaultWhitespaceChars(" \n\t\r")
+
 
 class NginxParser(object):
     """
@@ -31,18 +34,18 @@ class NginxParser(object):
     ifblock = Forward()
     subblock = Forward()
 
-    ifblock << (
+    ifblock <<= (
         ifword
         + SkipTo('{')
         + left_bracket
         + subblock
         + right_bracket)
 
-    subblock << ZeroOrMore(
+    subblock <<= ZeroOrMore(
         Group(assignment) | block | ifblock | setblock
     )
 
-    block << Group(
+    block <<= Group(
         Group(key + Optional(space + modifier) + Optional(space + location))
         + left_bracket
         + Group(subblock)
