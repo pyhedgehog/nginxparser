@@ -2,7 +2,7 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(name='nginxparser_eb',
-      version='0.0.7',
+      version='0.0.8',
       description='Nginx configuration Parser',
       author='Dusan Klinec',
       author_email='dusan.klinec@gmail.com',
