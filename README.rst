@@ -32,51 +32,7 @@ with
 
 
 Same as other serialization modules also you can export configuration
-with
-
-.. code:: python
-
-    >>> from nginxparser_eb import load
-    >>> load(open("/etc/nginx/sites-enabled/foo.conf"))
-
-    [['server'], [
-        ['listen', '80'],
-        ['server_name', 'foo.com'],
-        ['root', '/home/ubuntu/sites/foo/']]]]
-
-
-Same as other serialization modules also you can export configuration
 with ``dump`` and ``dumps`` methods.
-
-.. code:: python
-
-    >>> from nginxparser_eb import dumps
-    >>> dumps([['server'], [
-                ['listen', '80'],
-                ['server_name', 'foo.com'],
-                ['root', '/home/ubuntu/sites/foo/']]])
-
-    'server {
-        listen   80;
-        server_name foo.com;
-        root /home/ubuntu/sites/foo/;
-     }'
-
-
-.. code:: python
-
-    >>> from nginxparser_eb import dumps
-    >>> dumps([['server'], [
-                ['listen', '80'],
-                ['server_name', 'foo.com'],
-                ['root', '/home/ubuntu/sites/foo/']]])
-
-    'server {
-        listen   80;
-        server_name foo.com;
-        root /home/ubuntu/sites/foo/;
-     }'
-
 
 .. code:: python
 
@@ -128,3 +84,8 @@ From this reason, importing pyparsing modifies set white space chars back to
 
     pyparsing.ParserElement.setDefaultWhitespaceChars(" \n\t\r")
 
+
+Credits
+-------
+
+Based on the https://github.com/fatiherikli/nginxparser and CertBot Nginx parser.
