@@ -2,10 +2,10 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(name='nginxparser_eb',
-      version='0.0.6',
+      version='0.0.7',
       description='Nginx configuration Parser',
-      author='Fatih Erikli',
-      author_email='fatiherikli@gmail.com',
+      author='Dusan Klinec',
+      author_email='dusan.klinec@gmail.com',
       url='https://github.com/EnigmaBridge/nginxparser',
       license=open('LICENSE').read(),
       long_description=open('README.rst').read(),
