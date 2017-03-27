@@ -6,6 +6,8 @@
 
 import string
 import copy
+import types
+import logging
 from pyparsing import (
     Literal, White, Word, alphanums, CharsNotIn, Combine, Forward, Group, SkipTo,
     Optional, OneOrMore, ZeroOrMore, pythonStyleComment, Regex)
@@ -16,6 +18,7 @@ from pyparsing import restOfLine
 
 
 pyparsing.ParserElement.setDefaultWhitespaceChars(" \n\t\r")
+logger = logging.getLogger(__name__)
 
 
 class NginxParser(object):
@@ -190,6 +193,130 @@ def dump(blocks, _file):
 
     """
     return _file.write(dumps(blocks))
+
+
+class BaseDirective(object):
+    """
+    Simple representation for a config directive for Nginx
+    """
+    def __init__(self, key=None, value=None, parent=None, raw=None):
+        self.key = key
+        self.value = value
+        self.parent = parent
+        self.raw = raw
+
+    def __repr__(self):
+        return 'Base(key=%r, value=%r)' % (self.key, self.value)
+
+    def __str__(self):
+        return '%s -> %s' % (self.key, self.value)
+
+
+class BlockDirective(BaseDirective):
+    """
+    Simple representation for a block with more directives
+    """
+    def __init__(self, key=None, value=None, parent=None, raw=None):
+        super(BlockDirective, self).__init__(key, value, parent, raw)
+
+    def __repr__(self):
+        return 'Block(key=%r, dirs=%r)' % (self.key, self.value)
+
+
+def build_model(cfg, parent=None):
+    """
+    Returns model version of the config
+    :param cfg: 
+    :param parent: 
+    :return: 
+    """
+    # If not a list -> directive, return
+    if not isinstance(cfg, types.ListType):
+        return [BaseDirective(parent=parent, raw=cfg)]
+
+    # Assume blocks.
+    root = BlockDirective(value=[], parent=parent, raw=cfg)
+    for sub in cfg:
+        if not isinstance(sub, types.ListType):
+            raise ValueError('Directive expected: %s' % sub)
+
+        if isinstance(sub[1], types.ListType):
+            sub_block = build_model(sub[1], parent=parent)
+            sub_block.key = sub[0]
+            sub_block.raw = sub
+            root.value.append(sub_block)
+
+        else:
+            sub_dir = BaseDirective(key=sub[0], value=sub[1], parent=root, raw=sub)
+            root.value.append(sub_dir)
+
+    return root
+
+
+def find_in_model(model, path):
+    """
+    Finding elements defined by the path array in the configuration model.
+    Model to search can be BlockDirective or a list
+    :param model: 
+    :param path: 
+    :return: 
+    """
+    if path is None:
+        path = []
+
+    # End of the search, the whole path was reduced
+    if len(path) == 0:
+        return [model]
+
+    # Assume blocks.
+    ret_value = []
+    target = model if isinstance(model, types.ListType) else model.value
+
+    for sub in target:
+        if sub.key == path[0] or sub.key == [path[0]]:
+            if isinstance(sub, BlockDirective):
+                ret_value += find_in_model(sub.value, path[1:])
+            elif isinstance(sub, BaseDirective):
+                ret_value += [sub]
+            else:
+                raise ValueError('Unexpected model type')
+
+    return ret_value
+
+
+def find_elems(cfg, path):
+    """
+    Finding elements defined by the path array.
+    Returns simple parts of the configuration.
+    :param cfg:
+    :param path: [server, http, error_log]
+    :return:
+    """
+    # If not a list -> directive, return
+    if not isinstance(cfg, types.ListType):
+        return [cfg]
+
+    if path is None:
+        path = []
+
+    # End of the search, the whole path was reduced
+    if len(path) == 0:
+        return [cfg]
+
+    # Assume blocks.
+    ret_value = []
+    for sub in cfg:
+        if not isinstance(sub, types.ListType):
+            raise ValueError('Directive expected: %s' % sub)
+
+        if len(sub) != 2:
+            logger.debug('Sub block has invalid length %s' % sub)
+            continue
+
+        if sub[0] == path[0] or sub[0] == [path[0]]:
+            ret_value += find_elems(sub[1], path[1:])
+
+    return ret_value
 
 
 def spacey(x):

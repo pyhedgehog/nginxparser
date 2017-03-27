@@ -6,9 +6,11 @@ import unittest
 import pkg_resources
 import os
 import pprint
+import types
 
 from pyparsing import ParseException
-from nginxparser_eb import (load, loads, dump, dumps, NginxParser, NginxDumper, UnspacedList)
+from nginxparser_eb import (load, loads, dump, dumps, NginxParser, NginxDumper, UnspacedList,
+                            find_elems, find_in_model, build_model, BaseDirective, BlockDirective)
 
 
 FIRST = operator.itemgetter(0)
@@ -78,7 +80,6 @@ class TestNginxParser(unittest.TestCase):
         """
         with open(get_data_filename('complex.conf')) as handle:
             parsed = load(handle)
-            pprint.pprint(parsed)
 
             # Dump it
             dumped = dumps(parsed)
@@ -89,6 +90,40 @@ class TestNginxParser(unittest.TestCase):
             # Dump again
             dumped2 = dumps(parsed2)
             self.assertEqual(dumped, dumped2)
+
+    def test_find(self):
+        """
+        Finding directives in the config file
+        :return: 
+        """
+        with open(get_data_filename('complex.conf')) as handle:
+            parsed = load(handle)
+            roots = find_elems(parsed, ['http', 'server', 'root'])
+            self.assertEqual(roots, ['/usr/share/nginx/html', '/usr/share/nginx/html'])
+
+    def test_model(self):
+        with open(get_data_filename('complex.conf')) as handle:
+            parsed = load(handle)
+            model = build_model(parsed)
+            self.assertTrue(isinstance(model, BlockDirective))
+
+    def test_find_in_model(self):
+        with open(get_data_filename('complex.conf')) as handle:
+            parsed = load(handle)
+            model = build_model(parsed)
+            res = find_in_model(model, ['http', 'server', 'root'])
+
+            self.assertTrue(isinstance(res, types.ListType))
+            self.assertEqual(len(res), 2)
+
+            for x in res:
+                self.assertTrue(isinstance(x, BaseDirective))
+                self.assertEqual(x.key, 'root')
+                self.assertEqual(x.value, '/usr/share/nginx/html')
+                self.assertTrue(x.parent is not None)
+                self.assertTrue(isinstance(x.parent, BlockDirective))
+                # pprint.pprint(x)
+                # pprint.pprint(x.parent)
 
 
 class TestUnspacedList(unittest.TestCase):
