@@ -175,7 +175,7 @@ def load(_file):
 def dumps(blocks):
     """Dump to a string.
 
-    :param UnspacedList block: The parsed tree
+    :param UnspacedList blocks: The parsed tree
     :param int indentation: The number of spaces to indent
     :rtype: str
 
@@ -186,7 +186,7 @@ def dumps(blocks):
 def dump(blocks, _file):
     """Dump to a file.
 
-    :param UnspacedList block: The parsed tree
+    :param UnspacedList blocks: The parsed tree
     :param file _file: The file to dump to
     :param int indentation: The number of spaces to indent
     :rtype: NoneType
@@ -354,12 +354,11 @@ class UnspacedList(list):
 
         """
         if not isinstance(inbound, list):                      # str or None
-            return (inbound, inbound)
+            return inbound, inbound
         else:
             if not hasattr(inbound, "spaced"):
                 inbound = UnspacedList(inbound)
-            return (inbound, inbound.spaced)
-
+            return inbound, inbound.spaced
 
     def insert(self, i, x):
         item, spaced_item = self._coerce(x)
@@ -388,12 +387,16 @@ class UnspacedList(list):
 
     def pop(self, _i=None):
         raise NotImplementedError("UnspacedList.pop() not yet implemented")
+
     def remove(self, _):
         raise NotImplementedError("UnspacedList.remove() not yet implemented")
+
     def reverse(self):
         raise NotImplementedError("UnspacedList.reverse() not yet implemented")
+
     def sort(self, _cmp=None, _key=None, _Rev=None):
         raise NotImplementedError("UnspacedList.sort() not yet implemented")
+
     def __setslice__(self, _i, _j, _newslice):
         raise NotImplementedError("Slice operations on UnspacedLists not yet implemented")
 
@@ -423,7 +426,7 @@ class UnspacedList(list):
         return any((isinstance(x, list) and x.is_dirty() for x in self))
 
     def _spaced_position(self, idx):
-        "Convert from indexes in the unspaced list to positions in the spaced one"
+        """Convert from indexes in the unspaced list to positions in the spaced one"""
         pos = spaces = 0
         # Normalize indexes like list[-1] etc, and save the result
         if idx < 0:
