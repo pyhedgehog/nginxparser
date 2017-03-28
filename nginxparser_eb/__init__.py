@@ -275,7 +275,7 @@ def find_in_model(model, path):
     for sub in target:
         if sub.key == path[0] or sub.key == [path[0]]:
             if isinstance(sub, BlockDirective):
-                ret_value += find_in_model(sub.value, path[1:])
+                ret_value += find_in_model(sub, path[1:])
             elif isinstance(sub, BaseDirective):
                 ret_value += [sub]
             else:
