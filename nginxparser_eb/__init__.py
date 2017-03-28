@@ -241,7 +241,7 @@ def build_model(cfg, parent=None):
             raise ValueError('Directive expected: %s' % sub)
 
         if isinstance(sub[1], types.ListType):
-            sub_block = build_model(sub[1], parent=parent)
+            sub_block = build_model(sub[1], parent=root)
             sub_block.key = sub[0]
             sub_block.raw = sub
             root.value.append(sub_block)
