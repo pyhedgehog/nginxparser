@@ -253,6 +253,15 @@ def build_model(cfg, parent=None):
     return root
 
 
+def rebuild_model(root):
+    """
+    Rebuilds model from the root, using raw
+    :param root: 
+    :return: 
+    """
+    return build_model(root.raw, None)
+
+
 def find_in_model(model, path):
     """
     Finding elements defined by the path array in the configuration model.
@@ -282,6 +291,37 @@ def find_in_model(model, path):
                 raise ValueError('Unexpected model type')
 
     return ret_value
+
+
+def remove_from_model(root, element, rebuild=True):
+    """
+    Removes given element from the model.
+    The root needs to be rebuild
+    :param root: 
+    :param element: 
+    :param rebuild: 
+    :return: new root 
+    """
+    if element.parent is None:
+        raise ValueError('Cannot remove parentless entry')
+
+    if element.raw not in element.parent.raw[1]:
+        raise ValueError('Malformed model, element not present in the parent')
+
+    idx = None
+    for i, x in enumerate(element.parent.raw[1]):
+        if x == element.raw:
+            idx = i
+            break
+
+    if idx is None:
+        raise ValueError('Not found')
+
+    del element.parent.raw[1][idx]
+
+    if rebuild:
+        return rebuild_model(root)
+    return root
 
 
 def find_elems(cfg, path):

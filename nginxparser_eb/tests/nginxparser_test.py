@@ -10,7 +10,8 @@ import types
 
 from pyparsing import ParseException
 from nginxparser_eb import (load, loads, dump, dumps, NginxParser, NginxDumper, UnspacedList,
-                            find_elems, find_in_model, build_model, BaseDirective, BlockDirective)
+                            find_elems, find_in_model, build_model, rebuild_model, remove_from_model,
+                            BaseDirective, BlockDirective)
 
 
 FIRST = operator.itemgetter(0)
@@ -122,8 +123,45 @@ class TestNginxParser(unittest.TestCase):
                 self.assertEqual(x.value, '/usr/share/nginx/html')
                 self.assertTrue(x.parent is not None)
                 self.assertTrue(isinstance(x.parent, BlockDirective))
-                # pprint.pprint(x)
-                # pprint.pprint(x.parent)
+
+            res = find_in_model(model, ['http', 'include'])
+            self.assertTrue(isinstance(res, types.ListType))
+            self.assertEqual(len(res), 2)
+
+            res = find_in_model(model, ['http', 'server', 'include'])
+            self.assertEqual(len(res), 1)
+
+            res = find_in_model(model, ['http', 'index'])
+            self.assertEqual(len(res), 1)
+
+    def test_default_server(self):
+        with open(get_data_filename('complex.conf')) as handle:
+            parsed = load(handle)
+            model = build_model(parsed)
+
+            # Inspect main config file, find for default servers
+            servers = find_in_model(model, ['http', 'server'])
+            default_servers_found = 0
+            self.assertEqual(len(servers), 2)
+
+            for server in servers:
+                is_default_server = False
+                listens = find_in_model(server, ['listen'])
+                for listen in listens:
+                    if 'default_server' in listen.value:
+                        is_default_server = True
+                        break
+
+                if is_default_server:
+                    default_servers_found += 1
+                    self.assertTrue(server in server.parent.value)
+                    self.assertTrue(server.raw in server.parent.raw[1])
+                    model = remove_from_model(model, server)
+
+            self.assertEqual(default_servers_found, 1)
+
+            servers2 = find_in_model(model, ['http', 'server'])
+            self.assertEqual(len(servers2), 1)
 
 
 class TestUnspacedList(unittest.TestCase):
