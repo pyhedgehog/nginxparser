@@ -9,8 +9,21 @@ import copy
 import types
 import logging
 from pyparsing import (
-    Literal, White, Word, alphanums, CharsNotIn, Combine, Forward, Group, SkipTo,
-    Optional, OneOrMore, ZeroOrMore, pythonStyleComment, Regex)
+    Literal,
+    White,
+    Word,
+    alphanums,
+    CharsNotIn,
+    Combine,
+    Forward,
+    Group,
+    # SkipTo,
+    Optional,
+    OneOrMore,
+    ZeroOrMore,
+    # pythonStyleComment,
+    Regex,
+)
 
 import pyparsing
 from pyparsing import stringEnd
@@ -32,13 +45,13 @@ class NginxParser(object):
     right_bracket = space.leaveWhitespace() + Literal("}").suppress()
     semicolon = Literal(";").suppress()
     key = Word(alphanums + "_/+-.")
-    dollar_var = Combine(Literal('$') + Regex(r"[^\{\};,\s]+"))
+    dollar_var = Combine(Literal("$") + Regex(r"[^\{\};,\s]+"))
     condition = Regex(r"\(.+\)")
     # Matches anything that is not a special character, and ${SHELL_VARS}, AND
     # any chars in single or double quotes
     # All of these COULD be upgraded to something like
     # https://stackoverflow.com/a/16130746
-    dquoted = Regex(r'(\".*\")')
+    dquoted = Regex(r"(\".*\")")
     squoted = Regex(r"(\'.*\')")
     nonspecial = Regex(r"[^\{\};,]")
     varsub = Regex(r"(\$\{\w+\})")
@@ -52,14 +65,18 @@ class NginxParser(object):
     modifier = Literal("=") | Literal("~*") | Literal("~") | Literal("^~")
 
     # rules
-    comment = space + Literal('#') + restOfLine
+    comment = space + Literal("#") + restOfLine
 
     assignment = space + key + Optional(space + value, default=None) + semicolon
     location_statement = space + Optional(modifier) + Optional(space + location + space)
     if_statement = space + Literal("if") + space + condition + space
-    charset_map_statement = space + Literal("charset_map") + space + value + space + value
+    charset_map_statement = (
+        space + Literal("charset_map") + space + value + space + value
+    )
 
-    map_statement = space + Literal("map") + space + nonspace + space + dollar_var + space
+    map_statement = (
+        space + Literal("map") + space + nonspace + space + dollar_var + space
+    )
     # This is NOT an accurate way to parse nginx map entries; it's almost
     # certainly too permissive and may be wrong in other ways, but it should
     # preserve things correctly in mmmmost or all cases.
@@ -70,26 +87,32 @@ class NginxParser(object):
     map_pattern = Regex(r'".*"') | Regex(r"'.*'") | nonspace
     map_entry = space + map_pattern + space + value + space + semicolon
     map_block = Group(
-        Group(map_statement).leaveWhitespace() +
-        left_bracket +
-        Group(ZeroOrMore(Group(comment | map_entry)) + space).leaveWhitespace() +
-        right_bracket)
+        Group(map_statement).leaveWhitespace()
+        + left_bracket
+        + Group(ZeroOrMore(Group(comment | map_entry)) + space).leaveWhitespace()
+        + right_bracket
+    )
 
     block = Forward()
 
     # key could for instance be "server" or "http", or "location" (in which case
     # location_statement needs to have a non-empty location)
 
-    block_begin = (Group(space + key + location_statement) ^
-                   Group(if_statement) ^
-                   Group(charset_map_statement)).leaveWhitespace()
+    block_begin = (
+        Group(space + key + location_statement)
+        ^ Group(if_statement)
+        ^ Group(charset_map_statement)
+    ).leaveWhitespace()
 
-    block_innards = Group(ZeroOrMore(Group(comment | assignment) | block | map_block)
-                          + space).leaveWhitespace()
+    block_innards = Group(
+        ZeroOrMore(Group(comment | assignment) | block | map_block) + space
+    ).leaveWhitespace()
 
     block << Group(block_begin + left_bracket + block_innards + right_bracket)
 
-    script = OneOrMore(Group(comment | assignment) ^ block ^ map_block) + space + stringEnd
+    script = (
+        OneOrMore(Group(comment | assignment) ^ block ^ map_block) + space + stringEnd
+    )
     script.parseWithTabs().leaveWhitespace()
 
     def __init__(self, source):
@@ -107,8 +130,10 @@ class NginxParser(object):
 class NginxDumper(object):
     # pylint: disable=too-few-public-methods
     """A class that dumps nginx configuration from the provided tree."""
-    def __init__(self, blocks):
+
+    def __init__(self, blocks, indentation=2):
         self.blocks = blocks
+        self.indentation = indentation
 
     def __iter__(self, blocks=None):
         """Iterates the dumped nginx content."""
@@ -119,36 +144,37 @@ class NginxDumper(object):
                 continue
             b = copy.deepcopy(b0)
             if spacey(b[0]):
-                yield b.pop(0) # indentation
+                yield b.pop(0)  # indentation
                 if not b:
                     continue
             key, values = b.pop(0), b.pop(0)
 
             if isinstance(key, list):
-                yield "".join(key) + '{'
+                yield " ".join(key) + " {"
                 for parameter in values:
-                    for line in self.__iter__([parameter]): # negate "for b0 in blocks"
-                        yield line
-                yield '}'
+                    for line in self.__iter__([parameter]):  # negate "for b0 in blocks"
+                        yield " " * self.indentation + line
+                yield "}"
             else:
-                if isinstance(key, str) and key.strip() == '#':  # comment
+                if isinstance(key, str) and key.strip() == "#":  # comment
                     yield key + values
-                else:                                            # assignment
-                    gap = ""
+                else:  # assignment
+                    gap = " "
                     # Sometimes the parser has stuck some gap whitespace in here;
                     # if so rotate it into gap
                     if values and spacey(values):
                         gap = values
                         values = b.pop(0)
-                    yield key + gap + values + ';'
+                    yield key + gap + values + ";"
 
     def __str__(self):
         """Return the parsed block as a string."""
-        return ''.join(self)
+        return "\n".join(self)
 
 
 # Shortcut functions to respect Python's serialization interface
 # (like pyyaml, picker or json)
+
 
 def loads(source):
     """Parses from a string.
@@ -199,6 +225,7 @@ class BaseDirective(object):
     """
     Simple representation for a config directive for Nginx
     """
+
     def __init__(self, key=None, value=None, parent=None, raw=None):
         self.key = key
         self.value = value
@@ -206,29 +233,30 @@ class BaseDirective(object):
         self.raw = raw
 
     def __repr__(self):
-        return 'Base(key=%r, value=%r)' % (self.key, self.value)
+        return "Base(key=%r, value=%r)" % (self.key, self.value)
 
     def __str__(self):
-        return '%s -> %s' % (self.key, self.value)
+        return "%s -> %s" % (self.key, self.value)
 
 
 class BlockDirective(BaseDirective):
     """
     Simple representation for a block with more directives
     """
+
     def __init__(self, key=None, value=None, parent=None, raw=None):
         super(BlockDirective, self).__init__(key, value, parent, raw)
 
     def __repr__(self):
-        return 'Block(key=%r, dirs=%r)' % (self.key, self.value)
+        return "Block(key=%r, dirs=%r)" % (self.key, self.value)
 
 
 def build_model(cfg, parent=None):
     """
     Returns model version of the config
-    :param cfg: 
-    :param parent: 
-    :return: 
+    :param cfg:
+    :param parent:
+    :return:
     """
     # If not a list -> directive, return
     if not isinstance(cfg, types.ListType):
@@ -238,7 +266,7 @@ def build_model(cfg, parent=None):
     root = BlockDirective(value=[], parent=parent, raw=cfg)
     for sub in cfg:
         if not isinstance(sub, types.ListType):
-            raise ValueError('Directive expected: %s' % sub)
+            raise ValueError("Directive expected: %s" % sub)
 
         if isinstance(sub[1], types.ListType):
             sub_block = build_model(sub[1], parent=root)
@@ -256,8 +284,8 @@ def build_model(cfg, parent=None):
 def rebuild_model(root):
     """
     Rebuilds model from the root, using raw
-    :param root: 
-    :return: 
+    :param root:
+    :return:
     """
     return build_model(root.raw, None)
 
@@ -266,9 +294,9 @@ def find_in_model(model, path):
     """
     Finding elements defined by the path array in the configuration model.
     Model to search can be BlockDirective or a list
-    :param model: 
-    :param path: 
-    :return: 
+    :param model:
+    :param path:
+    :return:
     """
     if path is None:
         path = []
@@ -288,7 +316,7 @@ def find_in_model(model, path):
             elif isinstance(sub, BaseDirective):
                 ret_value += [sub]
             else:
-                raise ValueError('Unexpected model type')
+                raise ValueError("Unexpected model type")
 
     return ret_value
 
@@ -297,16 +325,16 @@ def remove_from_model(root, element, rebuild=True):
     """
     Removes given element from the model.
     The root needs to be rebuild
-    :param root: 
-    :param element: 
-    :param rebuild: 
-    :return: new root 
+    :param root:
+    :param element:
+    :param rebuild:
+    :return: new root
     """
     if element.parent is None:
-        raise ValueError('Cannot remove parentless entry')
+        raise ValueError("Cannot remove parentless entry")
 
     if element.raw not in element.parent.raw[1]:
-        raise ValueError('Malformed model, element not present in the parent')
+        raise ValueError("Malformed model, element not present in the parent")
 
     idx = None
     for i, x in enumerate(element.parent.raw[1]):
@@ -315,7 +343,7 @@ def remove_from_model(root, element, rebuild=True):
             break
 
     if idx is None:
-        raise ValueError('Not found')
+        raise ValueError("Not found")
 
     del element.parent.raw[1][idx]
 
@@ -347,10 +375,10 @@ def find_elems(cfg, path):
     ret_value = []
     for sub in cfg:
         if not isinstance(sub, types.ListType):
-            raise ValueError('Directive expected: %s' % sub)
+            raise ValueError("Directive expected: %s" % sub)
 
         if len(sub) != 2:
-            logger.debug('Sub block has invalid length %s' % sub)
+            logger.debug("Sub block has invalid length %s" % sub)
             continue
 
         if sub[0] == path[0] or sub[0] == [path[0]]:
@@ -360,7 +388,7 @@ def find_elems(cfg, path):
 
 
 def spacey(x):
-    return (isinstance(x, str) and x.isspace()) or x == ''
+    return (isinstance(x, str) and x.isspace()) or x == ""
 
 
 class UnspacedList(list):
@@ -393,7 +421,7 @@ class UnspacedList(list):
         :rtype: tuple
 
         """
-        if not isinstance(inbound, list):                      # str or None
+        if not isinstance(inbound, list):  # str or None
             return inbound, inbound
         else:
             if not hasattr(inbound, "spaced"):
@@ -420,10 +448,10 @@ class UnspacedList(list):
         self.dirty = True
 
     def __add__(self, other):
-        l = copy.deepcopy(self)
-        l.extend(other)
-        l.dirty = True
-        return l
+        res = copy.deepcopy(self)
+        res.extend(other)
+        res.dirty = True
+        return res
 
     def pop(self, _i=None):
         raise NotImplementedError("UnspacedList.pop() not yet implemented")
@@ -438,11 +466,15 @@ class UnspacedList(list):
         raise NotImplementedError("UnspacedList.sort() not yet implemented")
 
     def __setslice__(self, _i, _j, _newslice):
-        raise NotImplementedError("Slice operations on UnspacedLists not yet implemented")
+        raise NotImplementedError(
+            "Slice operations on UnspacedLists not yet implemented"
+        )
 
     def __setitem__(self, i, value):
         if isinstance(i, slice):
-            raise NotImplementedError("Slice operations on UnspacedLists not yet implemented")
+            raise NotImplementedError(
+                "Slice operations on UnspacedLists not yet implemented"
+            )
         item, spaced_item = self._coerce(value)
         self.spaced.__setitem__(self._spaced_position(i), spaced_item)
         list.__setitem__(self, i, item)
@@ -454,10 +486,10 @@ class UnspacedList(list):
         self.dirty = True
 
     def __deepcopy__(self, memo):
-        l = UnspacedList(self[:])
-        l.spaced = copy.deepcopy(self.spaced, memo=memo)
-        l.dirty = self.dirty
-        return l
+        res = UnspacedList(self[:])
+        res.spaced = copy.deepcopy(self.spaced, memo=memo)
+        res.dirty = self.dirty
+        return res
 
     def is_dirty(self):
         """Recurse through the parse tree to figure out if any sublists are dirty"""
@@ -482,5 +514,3 @@ class UnspacedList(list):
                 idx -= 1
             pos += 1
         return idx0 + spaces
-
-

@@ -1,0 +1,22 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "nginxparser"
+version = "0.0.9"
+description = "Nginx configuration Parser"
+authors = [ "Dusan Klinec <dusan.klinec@gmail.com>, Michael Dubner <pywebmail@list.ru>",]
+license = "MIT"
+
+[tool.poetry.scripts]
+"ngx" = "nginxparser.cli:main"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pyparsing = ">=1.5.5"
+
+[tool.poetry.dev-dependencies]
+mypy = "^0.991"
+flake8 = "^6.0.0"
+black = "^22.10.0"

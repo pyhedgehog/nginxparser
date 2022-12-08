@@ -1,2 +1,0 @@
--r requirements.pip
-git+git://github.com/fatiherikli/mockio.git

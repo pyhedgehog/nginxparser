@@ -2,4 +2,8 @@
 *.egg-info
 .ropeproject
 .idea
+.vscode
 dist/
+build/
+investigate/
+__pycache__
